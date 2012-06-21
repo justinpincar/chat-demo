@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Quick Demo for aendrea</title>
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap-responsive.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/screen.css" />
+    <script src="/javascripts/jquery.min.js"></script>
+    <script src="/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/javascripts/date.js"></script>
+    <script src="/javascripts/names.js"></script>
+  </head>
+  <body>
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <ul class="nav">
+            <li class="active">
+            <a href="#">Quick Demo</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="app" class="container">
+      <div class="row">
+        <div class="span8 offset2">
+          <form class="well form-inline">
+            <input id="msg_to_send" type="text" class="input-medium" maxlength="140" placeholder="Your message here..."></input>
+            <button id="msg_send" type="submit" class="btn">Send</button>
+            <label class="pull-right">Welcome, <span id="user_name"></span></label>
+          </form>
+          <div id="msgs"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      $(function() {
+        $('#user_name').text(getRandomName());
+        $('#msg_to_send').focus();
+
+        var socket = io.connect('http://localhost');
+        socket.on('chat', function (data) {
+          var chat_timestamp = new Date().toString("HH:mm");
+          var elem = $('<div class="chat"><span class="chat_timestamp">' + chat_timestamp + '</span>&nbsp;</div>');
+          var chat_nickname_elem = $('<span class="chat_nickname"></span>');
+          chat_nickname_elem.text(data.nickname);
+          var chat_msg_elem = $('<span class="chat_message"></span>');
+          chat_msg_elem.text(data.msg);
+          elem.append(chat_nickname_elem);
+          elem.append(chat_msg_elem);
+          $('#msgs').prepend(elem);
+        });
+
+        $('#msg_send').click(function(e) {
+          var text = $('#msg_to_send').val();
+          $('#msg_to_send').val('');
+          socket.emit('chat', {msg: text, nickname: $('#user_name').text()});
+          $('#msg_to_send').focus();
+          e.preventDefault();
+          return false;
+        });
+      });
+    </script>
+  </body>
+</html>
+

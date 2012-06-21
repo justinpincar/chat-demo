@@ -1,0 +1,30 @@
+#app {
+  padding-top: 90px;
+}
+
+#user_name {
+  line-height: 30px;
+}
+
+#msgs {
+  height: 400px;
+}
+
+.chat {
+  display: block;
+}
+
+.chat_timestamp {
+  float: left;
+  width: 40px;
+}
+
+.chat_nickname {
+  float: left;
+  width: 120px;
+}
+
+.chat_message {
+  float: left;
+}
+
