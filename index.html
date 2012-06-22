@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Quick Demo for aendrea</title>
+    <title>Demo for aendrea</title>
     <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap-responsive.min.css" />
     <link rel="stylesheet" type="text/css" href="css/screen.css" />
@@ -9,6 +9,7 @@
     <script src="/bootstrap/js/bootstrap.min.js"></script>
     <script src="/javascripts/date.js"></script>
     <script src="/javascripts/names.js"></script>
+    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBq2kAEsD4UhnpJJq30R9i4dozNDviDI5c&sensor=false"></script>
   </head>
   <body>
     <div class="navbar navbar-fixed-top">
@@ -16,7 +17,7 @@
         <div class="container">
           <ul class="nav">
             <li class="active">
-            <a href="#">Quick Demo</a>
+            <a href="#">Demo for aendrea</a>
             </li>
           </ul>
         </div>
@@ -25,43 +26,113 @@
 
     <div id="app" class="container">
       <div class="row">
-        <div class="span8 offset2">
-          <form class="well form-inline">
-            <input id="msg_to_send" type="text" class="input-medium" maxlength="140" placeholder="Your message here..."></input>
-            <button id="msg_send" type="submit" class="btn">Send</button>
-            <label class="pull-right">Welcome, <span id="user_name"></span></label>
-          </form>
-          <div id="msgs"></div>
-        </div>
+        <div id="map" class="span12"></div>
       </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
       $(function() {
-        $('#user_name').text(getRandomName());
         $('#msg_to_send').focus();
 
-        var socket = io.connect('http://localhost');
-        socket.on('chat', function (data) {
-          var chat_timestamp = new Date().toString("HH:mm");
-          var elem = $('<div class="chat"><span class="chat_timestamp">' + chat_timestamp + '</span>&nbsp;</div>');
-          var chat_nickname_elem = $('<span class="chat_nickname"></span>');
-          chat_nickname_elem.text(data.nickname);
-          var chat_msg_elem = $('<span class="chat_message"></span>');
-          chat_msg_elem.text(data.msg);
-          elem.append(chat_nickname_elem);
-          elem.append(chat_msg_elem);
-          $('#msgs').prepend(elem);
+        function bind_chat(room) {
+          $('#chat_room').text(room);
+          window.socket = io.connect('http://localhost',
+            {'force new connection': true,
+              'reconnect': true,
+              'reconnection delay': 500,
+              'max reconnection attempts': 10});
+          socket.on('connect', function () {
+            socket.emit('join_room', {room: room, nickname: name});
+          });
+          socket.on('chat', function (data) {
+            var chat_timestamp = new Date().toString("HH:mm");
+            var elem = $('<div class="chat"><span class="chat_timestamp">' + chat_timestamp + '</span>&nbsp;</div>');
+            var chat_nickname_elem = $('<span class="chat_nickname"></span>');
+            chat_nickname_elem.text(data.nickname);
+            var chat_msg_elem = $('<span class="chat_message"></span>');
+            chat_msg_elem.text(data.msg);
+            elem.append(chat_nickname_elem);
+            elem.append(chat_msg_elem);
+            $('#msgs').prepend(elem);
+          });
+
+          $('#msg_send').click(function(e) {
+            var text = $('#msg_to_send').val();
+            $('#msg_to_send').val('');
+            socket.emit('chat', {msg: text, nickname: $('#user_name').text()});
+            $('#msg_to_send').focus();
+            e.preventDefault();
+            return false;
+          });
+          $('#msg_to_send').focus();
+        };
+
+        function close_chat(room) {
+          window.socket.disconnect();
+          $('.map_overlay').remove();
+        };
+
+        var map_options = {
+          zoom: 14,
+          center: new google.maps.LatLng(38.8843, -77.0445),
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+          //disableDefaultUI: true,
+          //draggable: false,
+          //disableDoubleClickZoom: true
+        }
+        var map_div = $('#map')[0];
+        var map = new google.maps.Map(map_div, map_options);
+
+        lat_lng_white_house = new google.maps.LatLng(38.8976, -77.0356);
+        var marker_white_house = new google.maps.Marker({
+          position: lat_lng_white_house,
+          map: map
         });
 
-        $('#msg_send').click(function(e) {
-          var text = $('#msg_to_send').val();
-          $('#msg_to_send').val('');
-          socket.emit('chat', {msg: text, nickname: $('#user_name').text()});
-          $('#msg_to_send').focus();
-          e.preventDefault();
-          return false;
+        lat_lng_pentagon = new google.maps.LatLng(38.8709, -77.0559);
+        var marker_pentagon = new google.maps.Marker({
+          position: lat_lng_pentagon,
+          map: map
+        });
+
+        var name = getRandomName();
+        function content_node() {
+          return $(
+            '<div class="map_overlay">' +
+            '<form class="well form-inline">' +
+            '<input id="msg_to_send" type="text" class="input-medium" maxlength="140" placeholder="Your message here..."></input>' +
+            '<button id="msg_send" type="submit" class="btn">Send</button>' +
+            '<label class="pull-right">Welcome to \'<span id="chat_room"></span>\', <span id="user_name">' + name + '</span></label>' +
+            '</form>' +
+            '<div id="msgs"></div>' +
+            '</div>')[0];
+        };
+
+        google.maps.event.addListener(marker_white_house, 'click', function() {
+          var info_window_white_house = new google.maps.InfoWindow({
+            content: content_node()
+          });
+          info_window_white_house.open(map, marker_white_house);
+          google.maps.event.addListener(info_window_white_house, 'domready', function() {
+            bind_chat('The White House');
+            google.maps.event.addListener(info_window_white_house,'closeclick', function() {
+              close_chat('The White House');
+            });
+          });
+        });
+
+        google.maps.event.addListener(marker_pentagon, 'click', function() {
+          var info_window_pentagon = new google.maps.InfoWindow({
+            content: content_node()
+          });
+          info_window_pentagon.open(map, marker_pentagon);
+          google.maps.event.addListener(info_window_pentagon, 'domready', function() {
+            bind_chat('The Pentagon');
+            google.maps.event.addListener(info_window_pentagon,'closeclick', function() {
+              close_chat('The Pentagon');
+            });
+          });
         });
       });
     </script>

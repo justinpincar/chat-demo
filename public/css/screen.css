@@ -2,12 +2,17 @@
   padding-top: 90px;
 }
 
+#map img {
+  max-width: none;
+}
+
 #user_name {
   line-height: 30px;
 }
 
 #msgs {
-  height: 400px;
+  height: 300px;
+  overflow: auto;
 }
 
 .chat {
@@ -21,10 +26,18 @@
 
 .chat_nickname {
   float: left;
-  width: 120px;
+  width: 130px;
 }
 
 .chat_message {
   float: left;
+}
+
+#map {
+  height: 600px;
+}
+
+.map_overlay {
+  width: 650px;
 }
 

@@ -9,9 +9,18 @@ app.get('/', function (req, res) {
 
 var io = require('socket.io').listen(app);
 var chat = io.sockets.on('connection', function (socket) {
-  socket.emit('chat', {msg: "Type a message to others online! No history is stored in this version.", nickname: "System"});
+  var room = null;
+  socket.on('join_room', function(data) {
+    nickname = data.nickname;
+    room = data.room;
+    socket.join(room);
+    io.sockets.in(room).emit('chat', {msg: nickname + ' joined the room.', nickname: "System"});
+  });
   socket.on('chat', function (data) {
-    chat.emit('chat', data);
+    io.sockets.in(room).emit('chat', data);
+  });
+  socket.on('disconnect', function(data){
+    io.sockets.in(room).emit('chat', {msg: nickname + ' left the room.', nickname: "System"});
   });
 });
 
